@@ -1,11 +1,15 @@
-
-#include "stdio.h"
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
+
+#ifdef _WIN32
+    #pragma comment(lib, "Ws2_32.lib")
+    #include <Winsock2.h>
+#else
+    #include <netinet/in.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+#endif
 
 #define BUF_SIZE 1024*1024
 
@@ -41,12 +45,19 @@ char* getFileName(char *path)
 
 int createServerSocket(int port) {
     int server_fd;
-    ssize_t valread;
     struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
+
+#ifdef _WIN32
+    WSADATA wsaData;
+
+    if (WSAStartup(0x202, &wsaData) != 0) {
+        printf("ERROR: WSAStartup failure.\n");
+        exit(EXIT_FAILURE);
+    }
+#endif
 
     // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
@@ -93,7 +104,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int requestBytes = read(clientSocket, buf, BUF_SIZE);
+    int requestBytes = recv(clientSocket, buf, BUF_SIZE, 0);
     if (requestBytes <= 0) {
         printf("read request error\r\n");
         goto closeSockets;
@@ -102,9 +113,9 @@ int main(int argc, char* argv[]) {
     sprintf(buf, "HTTP/1.1 200 OK\n"
        "Content-Disposition: attachment; filename=\"%s\"\n"
        "Content-Type: application/octet-stream\n"
-       "Keep-Alive: timeout=2, max=1"
-       "Connection: Keep-Alive"
-       "Content-Length: %d\n\n\0", getFileName(filePath), fileSize);
+       "Keep-Alive: timeout=2, max=1\n"
+       "Connection: Keep-Alive\n"
+       "Content-Length: %d\n\n", getFileName(filePath), fileSize);
     send(clientSocket, buf, strlen(buf), 0);
 
     FILE* file = fopen(filePath, "rb");
@@ -119,11 +130,16 @@ int main(int argc, char* argv[]) {
     fclose(file);
     printf("File sent\r\n");
 
-closeSockets:
+
+closeSockets:;
     int optReuse = 1;
     setsockopt(serverSocket,SOL_SOCKET,SO_REUSEADDR, &optReuse, sizeof(int));
     close(clientSocket);
     close(serverSocket);
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     return 0;
 }

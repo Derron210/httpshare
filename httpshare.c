@@ -15,13 +15,13 @@
 
 char buf[BUF_SIZE];
 
-int getFileSize(char* file) {
+long getFileSize(char* file) {
     FILE* fp = fopen(file, "rb");
     if (fp == NULL) {
         return 0;
     }
     fseek(fp, 0L, SEEK_END);
-    int size = ftell(fp);
+    long size = ftell(fp);
     fclose(fp);
     return size;
 }
@@ -66,9 +66,7 @@ int createServerSocket(int port) {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
 
-    if (bind(server_fd, (struct sockaddr*)&address,
-             sizeof(address))
-        < 0) {
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
@@ -89,7 +87,7 @@ int main(int argc, char* argv[]) {
     short port = strtol(argv[1], NULL, 10);
     char* filePath = argv[2];
 
-    int fileSize = getFileSize(filePath);
+    long fileSize = getFileSize(filePath);
     if (fileSize == 0) {
         printf("Couldn't get file\n");
         return 1;
@@ -115,7 +113,7 @@ int main(int argc, char* argv[]) {
        "Content-Type: application/octet-stream\n"
        "Keep-Alive: timeout=2, max=1\n"
        "Connection: Keep-Alive\n"
-       "Content-Length: %d\n\n", getFileName(filePath), fileSize);
+       "Content-Length: %ld\n\n", getFileName(filePath), fileSize);
     send(clientSocket, buf, strlen(buf), 0);
 
     FILE* file = fopen(filePath, "rb");
@@ -132,6 +130,7 @@ int main(int argc, char* argv[]) {
 
 
 closeSockets:;
+    shutdown(clientSocket, SHUT_RDWR);
     int optReuse = 1;
     setsockopt(serverSocket,SOL_SOCKET,SO_REUSEADDR, &optReuse, sizeof(int));
     close(clientSocket);

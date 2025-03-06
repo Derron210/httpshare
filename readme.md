@@ -2,7 +2,9 @@
 
 ### Windows
 
-Use Developer Command Prompt for Visual Studio
+Use cmake
+Or open direcotry in Visual Studio
+Or use developer Command Prompt for Visual Studio
 ```
 cl .\httpshare.c ws2_32.lib
 ```

@@ -33,7 +33,7 @@ char* getFileName(char *path)
      
     for(int i=len-1; i>0; i--)
     {
-        if(path[i]=='\\' || path[i] == '//' || path[i]=='/' )
+        if(path[i]=='\\' || path[i]=='/' )
         {
             flag=1;
             path = path+i+1;
@@ -66,9 +66,7 @@ int createServerSocket(int port) {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
 
-    if (bind(server_fd, (struct sockaddr*)&address,
-             sizeof(address))
-        < 0) {
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }

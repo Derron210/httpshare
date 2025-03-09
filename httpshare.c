@@ -5,10 +5,12 @@
 #ifdef _WIN32
     #pragma comment(lib, "Ws2_32.lib")
     #include <Winsock2.h>
+    #define SOCKET_SHUTDOWN_FLAG SD_BOTH
 #else
     #include <netinet/in.h>
     #include <sys/socket.h>
     #include <unistd.h>
+    #define SOCKET_SHUTDOWN_FLAG SHUT_RDWR
 #endif
 
 #define BUF_SIZE 1024*1024
@@ -130,9 +132,9 @@ int main(int argc, char* argv[]) {
 
 
 closeSockets:;
-    shutdown(clientSocket, SHUT_RDWR);
+    shutdown(clientSocket, SOCKET_SHUTDOWN_FLAG);
     int optReuse = 1;
-    setsockopt(serverSocket,SOL_SOCKET,SO_REUSEADDR, &optReuse, sizeof(int));
+    setsockopt(serverSocket,SOL_SOCKET, SO_REUSEADDR, &optReuse, sizeof(int));
     close(clientSocket);
     close(serverSocket);
 
